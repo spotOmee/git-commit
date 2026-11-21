@@ -97,6 +97,12 @@ Before initializing Git or staging any files, run these mandatory safeguards:
    *.keystore
    *.jks
    *.p12
+   *.pem
+   *.key
+   *.pk8
+   id_rsa*
+   id_ed25519*
+   secrets.*
    ```
 
 2. **Secret & Credential Leak Scanner:**
@@ -127,10 +133,59 @@ Before initializing Git or staging any files, run these mandatory safeguards:
 
 ## Step 5: Execute Zero-Bloat Sync & Push
 
+### Mandatory Pre-Push Security & Credential Gate
+Before staging or committing any files in any scenario, strictly enforce credential-free remote and safe staging:
+
+1. **Credential-Free Remote URL Verification:**
+   Ensure remote URLs never embed plaintext tokens, usernames, or passwords:
+   ```bash
+   REMOTE_URL=$(git remote get-url origin 2>/dev/null || true)
+   if echo "$REMOTE_URL" | grep -qE "://[^@]+@"; then
+     echo "❌ Token embedded in remote URL! Sanitizing..."
+     CLEAN_URL=$(echo "$REMOTE_URL" | sed -E 's|://[^@]+@|://|')
+     git remote set-url origin "$CLEAN_URL"
+   fi
+   ```
+   Always rely on system credential helpers (`gh auth git-credential`) or SSH agent forwarding.
+
+2. **Safe Staging & Diff Verification:**
+   Never perform blind `git add -A` without verifying against sensitive patterns:
+   ```bash
+   # Check unignored secrets before staging
+   git status --porcelain | grep -E "\.(keystore|jks|pem|key|p12|pk8|env)$|local\.properties" && {
+     echo "❌ SENSITIVE FILES UNIGNORED! Adding to .gitignore..."
+     echo -e "\n*.keystore\n*.jks\n*.pem\n*.key\nlocal.properties\n.env\n.env.*" >> .gitignore
+   }
+   ```
+   After staging, audit `git diff --cached`:
+   ```bash
+   # Scan staged diff for sensitive patterns before commit
+   python3 -c '
+   import subprocess, sys, re
+   diff = subprocess.check_output(["git", "diff", "--cached"]).decode("utf-8", errors="ignore")
+   patterns = [
+       (r"-----BEGIN (?:RSA |EC |DSA |OPENSSH )?PRIVATE KEY-----", "Private Key"),
+       (r"\b[0-9]{8,10}:[a-zA-Z0-9_-]{35}\b", "Telegram Bot Token"),
+       (r"(?i)\b(?:ghp|gho|ghu|ghs|ghr)_[a-zA-Z0-9]{36,}\b", "GitHub Token"),
+       (r"(?i)\bgithub_pat_[a-zA-Z0-9_]{30,}\b", "GitHub PAT"),
+   ]
+   for pat, desc in patterns:
+       if re.search(pat, diff):
+           print(f"❌ CRITICAL: Staged diff contains sensitive {desc}! Aborting push.")
+           sys.exit(1)
+   '
+   ```
+
+3. **Clean Semantic Commit Messages:**
+   Commit messages must never contain environment variables, home directory paths, system usernames, or key hashes. Use clean semantic messages (e.g. `feat: update app navigation and models`).
+
+---
+
 ### Scenario A: Create New Repo & Push
 ```bash
 git init -b main
-git add -A
+git add .
+python3 -c '... diff check ...'
 git commit -m "feat: initial project upload with documentation"
 gh repo create "<repo-slug>" --private --source=. --remote=origin --push
 ```
@@ -139,7 +194,8 @@ gh repo create "<repo-slug>" --private --source=. --remote=origin --push
 ```bash
 git init -b main
 git remote add origin "https://github.com/<owner>/<repo-slug>.git"
-git add -A
+git add .
+python3 -c '... diff check ...'
 git commit -m "feat: initial project upload"
 git push -u origin main
 ```
