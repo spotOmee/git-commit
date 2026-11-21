@@ -6,7 +6,7 @@ REPO_URL="https://github.com/spotOmee/git-commit.git"
 
 echo "==> Installing ${SKILL_NAME} globally..."
 
-# Resolve script directory or clone if executed via curl | bash
+# Resolve script directory or clone if needed
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" 2>/dev/null && pwd)"
 if [ ! -f "$SCRIPT_DIR/SKILL.md" ]; then
   CANONICAL_DIR="$HOME/.agents/skills/${SKILL_NAME}"
@@ -24,7 +24,6 @@ fi
 TARGET_DIRS=(
   "$HOME/.agents/skills/${SKILL_NAME}"
   "$HOME/.gemini/skills/${SKILL_NAME}"
-  "$HOME/.gemini/config/skills/${SKILL_NAME}"
   "$HOME/.claude/skills/${SKILL_NAME}"
 )
 
@@ -54,7 +53,6 @@ done
 for ALIAS in "${ALIASES[@]}"; do
   ln -sfn "$SCRIPT_DIR" "$HOME/.agents/skills/${ALIAS}"
   [ -d "$HOME/.gemini/skills" ] && ln -sfn "$SCRIPT_DIR" "$HOME/.gemini/skills/${ALIAS}"
-  [ -d "$HOME/.gemini/config/skills" ] && ln -sfn "$SCRIPT_DIR" "$HOME/.gemini/config/skills/${ALIAS}"
   [ -d "$HOME/.claude/skills" ] && ln -sfn "$SCRIPT_DIR" "$HOME/.claude/skills/${ALIAS}"
 done
 

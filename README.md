@@ -49,22 +49,15 @@ Please install the `git-commit` skill globally so you can sync projects to GitHu
 2. Run its installer or symlink it:
    bash ~/.agents/skills/git-commit/install.sh
 
-3. Verify SKILL.md is registered:
-   ls -la ~/.agents/skills/git-commit/SKILL.md
+3. Verify skill directory is registered:
+   test -d ~/.agents/skills/git-commit && echo "[✔] Skill registered"
 ```
 
 ---
 
-## 💻 One-Line Shell Install (Direct CLI)
+## 💻 Manual CLI Install
 
-If you prefer installing directly from your terminal:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/spotOmee/git-commit/main/install.sh | bash
-```
-
-Or clone manually:
-
+To install manually:
 ```bash
 git clone --depth 1 https://github.com/spotOmee/git-commit.git ~/.agents/skills/git-commit
 bash ~/.agents/skills/git-commit/install.sh

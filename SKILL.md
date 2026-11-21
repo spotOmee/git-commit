@@ -1,5 +1,8 @@
 ---
 name: git-commit
+allowed-tools:
+  - run_command
+  - read_file
 description: Zero-storage-bloat cloud sync manager for GitHub. Trigger whenever the user types `/git-commit`, `/git commit`, or asks to push a project to a new or existing GitHub repository (by name or keyword), auto-generate README documentation, safeguard secrets/large files, and delete local `.git` metadata afterward to save phone storage.
 ---
 # Git Commit (Zero-Storage-Bloat Cloud Sync)
@@ -28,13 +31,7 @@ Please install the `git-commit` skill globally so you can sync projects to GitHu
    bash ~/.agents/skills/git-commit/install.sh
 
 3. Verify installation:
-   ls -la ~/.agents/skills/git-commit/SKILL.md
-```
-
-### 💻 Quick One-Line Shell Command (Direct CLI)
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/spotOmee/git-commit/main/install.sh | bash
+   test -d ~/.agents/skills/git-commit && echo "[✔] Skill registered"
 ```
 
 ---
@@ -92,7 +89,7 @@ Before initializing Git or staging any files, run these mandatory safeguards:
    .DS_Store
 
    # Secrets & Signing Keys
-   .env
+   *.env*
    .env.*
    *.keystore
    *.jks
@@ -106,7 +103,7 @@ Before initializing Git or staging any files, run these mandatory safeguards:
    ```
 
 2. **Secret & Credential Leak Scanner:**
-   - Verify no `.env`, `*.keystore`, `*.jks`, or `google-services.json` containing private credentials is being staged unless explicitly requested.
+   - Verify no environment secrets (`*.env*`), `*.keystore`, `*.jks`, or `google-services.json` containing private credentials is being staged unless explicitly requested.
    - Scan text files for accidental hardcoded tokens (`ghp_`, `github_pat_`, `AIzaSy`, or Telegram bot tokens matching `[0-9]{8,10}:[A-Za-z0-9_-]{35}`). If found, warn the user and exclude or redact before pushing.
 
 3. **Large File Guard (> 50 MB):**
